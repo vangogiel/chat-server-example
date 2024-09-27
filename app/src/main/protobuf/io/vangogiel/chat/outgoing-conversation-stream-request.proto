@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package io.vangogiel.chat;
+
+import "io/vangogiel/chat/message.proto";
+
+message OutgoingConversationStreamRequest {
+  string from_username = 1;
+  string to_username = 2;
+  Message message = 3;
+}

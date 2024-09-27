@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package io.vangogiel.chat;
+
+message HandlingResult {
+  oneof result {
+    Success success = 1;
+    Failure failure = 2;
+  }
+
+  message Success {}
+
+  message Failure {
+    string message = 1;
+    string code    = 2;
+  }
+}
