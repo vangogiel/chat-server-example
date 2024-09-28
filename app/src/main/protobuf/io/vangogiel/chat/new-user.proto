@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package io.vangogiel.chat;
+
+message NewUser {
+  string username = 1;
+}

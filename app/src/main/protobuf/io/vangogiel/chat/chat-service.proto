@@ -10,10 +10,12 @@ import "io/vangogiel/chat/outgoing-conversation-stream-request.proto";
 import "io/vangogiel/chat/handling-result.proto";
 import "io/vangogiel/chat/users-list-request.proto";
 import "io/vangogiel/chat/users-list-stream-response.proto";
+import "io/vangogiel/chat/new-user.proto";
 
 service ChatService {
-  rpc streamUsersList(UsersListRequest) returns (stream UsersListStreamResponse);
-  rpc streamChatsList(ChatsListRequest) returns (stream ChatsListStreamResponse);
+  rpc addNewUser(NewUser) returns (HandlingResult);
+  rpc getUsersList(UsersListRequest) returns (UsersListStreamResponse);
+  rpc getChatsList(ChatsListRequest) returns (ChatsListStreamResponse);
   rpc getOutgoingConversationStream(stream OutgoingConversationStreamRequest) returns (stream HandlingResult);
   rpc getIncomingConversationStream(IncomingConversationRequest) returns (stream IncomingConversationStreamResponse);
 }

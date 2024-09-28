@@ -1,6 +1,6 @@
 package io.vangogiel.chat
 
-import cats.effect.{ExitCode, IO, IOApp}
+import cats.effect.{ ExitCode, IO, IOApp }
 import io.grpc.protobuf.services.ProtoReflectionService
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder
 import io.vangogiel.chat.chat_service.ChatServiceFs2Grpc
@@ -16,8 +16,9 @@ object Main extends IOApp {
 
   private def createServerAndAddServices() = {
     val serverBuilder = NettyServerBuilder.forPort(9999)
+    val usersStorage = new InMemoryUsersRepository
     for {
-      chatService <- ChatServiceFs2Grpc.bindServiceResource(new ChatServiceImpl[IO])
+      chatService <- ChatServiceFs2Grpc.bindServiceResource(new ChatServiceImpl[IO](usersStorage))
       _ = serverBuilder.addService(chatService)
       _ = serverBuilder.addService(ProtoReflectionService.newInstance())
     } yield serverBuilder
