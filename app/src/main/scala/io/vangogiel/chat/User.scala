@@ -1,3 +1,3 @@
 package io.vangogiel.chat
 
-case class User(id: Option[Int], username: String)
+case class User(username: String, chats: List[Chat] = List.empty)

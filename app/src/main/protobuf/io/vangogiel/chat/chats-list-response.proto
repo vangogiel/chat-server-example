@@ -5,11 +5,9 @@ package io.vangogiel.chat;
 import "io/vangogiel/chat/message.proto";
 
 message Chat {
-  string from_username = 1;
-  int32 number_of_unread_messages = 2;
-  Message last_message = 3;
+  string username = 1;
 }
 
-message ChatsListStreamResponse {
+message ChatsListResponse {
   repeated Chat list_of_chats = 1;
 }

@@ -2,4 +2,6 @@ syntax = "proto3";
 
 package io.vangogiel.chat;
 
-message ChatsListRequest {}
+message ChatsListRequest {
+  string username = 1;
+}

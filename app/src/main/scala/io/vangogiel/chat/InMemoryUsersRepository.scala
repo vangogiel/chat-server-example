@@ -3,7 +3,7 @@ package io.vangogiel.chat
 class InMemoryUsersRepository extends UsersStorage {
   private var listOfUsers: List[User] = List.empty
 
-  override def getListOfUsers(): List[User] = {
+  override def getListOfUsers: List[User] = {
     listOfUsers
   }
 
@@ -11,5 +11,8 @@ class InMemoryUsersRepository extends UsersStorage {
     listOfUsers = user :: listOfUsers
   }
 
-  override def usernameExists(username: String): Boolean = listOfUsers.map(_.username).contains(username)
+  override def usernameExists(username: String): Boolean =
+    listOfUsers.map(_.username).contains(username)
+
+  override def findUser(username: String): Option[User] = listOfUsers.find(_.username == username)
 }
