@@ -1,21 +1,29 @@
 package io.vangogiel.chat
 
-import cats.effect.kernel.Sync
+import cats.effect.kernel.{ Ref, Sync }
+import cats.implicits.toFunctorOps
 
-class InMemoryUsersRepository[F[_]: Sync] extends UsersStorage[F] {
-  private var listOfUsers: List[User] = List.empty
-
+class InMemoryUsersRepository[F[_]: Sync](usersStorageRef: Ref[F, List[User]])
+    extends UsersStorage[F] {
   override def getListOfUsers: F[List[User]] = {
-    Sync[F].delay(listOfUsers)
+    usersStorageRef.get
   }
 
   override def addUser(user: User): F[Unit] = {
-    Sync[F].delay((listOfUsers = user :: listOfUsers))
+    usersStorageRef.update(listOfUsers => user :: listOfUsers)
   }
 
   override def usernameExists(username: String): F[Boolean] =
-    Sync[F].delay(listOfUsers.map(_.username).contains(username))
+    usersStorageRef.get.map(listOfUsers => listOfUsers.map(_.username).contains(username))
 
   override def findUser(username: String): F[Option[User]] =
-    Sync[F].delay((listOfUsers.find(_.username == username)))
+    usersStorageRef.get.map(listOfUsers => listOfUsers.find(_.username == username))
+}
+
+object InMemoryUsersRepository {
+  def apply[F[_]: Sync](): F[InMemoryUsersRepository[F]] = {
+    Ref.of[F, List[User]](List.empty).map { ref =>
+      new InMemoryUsersRepository[F](ref)
+    }
+  }
 }
