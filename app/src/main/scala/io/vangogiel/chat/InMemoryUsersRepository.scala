@@ -1,18 +1,21 @@
 package io.vangogiel.chat
 
-class InMemoryUsersRepository extends UsersStorage {
+import cats.effect.kernel.Sync
+
+class InMemoryUsersRepository[F[_]: Sync] extends UsersStorage[F] {
   private var listOfUsers: List[User] = List.empty
 
-  override def getListOfUsers: List[User] = {
-    listOfUsers
+  override def getListOfUsers: F[List[User]] = {
+    Sync[F].delay(listOfUsers)
   }
 
-  override def addUser(user: User): Unit = {
-    listOfUsers = user :: listOfUsers
+  override def addUser(user: User): F[Unit] = {
+    Sync[F].delay((listOfUsers = user :: listOfUsers))
   }
 
-  override def usernameExists(username: String): Boolean =
-    listOfUsers.map(_.username).contains(username)
+  override def usernameExists(username: String): F[Boolean] =
+    Sync[F].delay(listOfUsers.map(_.username).contains(username))
 
-  override def findUser(username: String): Option[User] = listOfUsers.find(_.username == username)
+  override def findUser(username: String): F[Option[User]] =
+    Sync[F].delay((listOfUsers.find(_.username == username)))
 }

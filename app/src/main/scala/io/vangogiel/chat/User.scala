@@ -1,3 +1,5 @@
 package io.vangogiel.chat
 
-case class User(username: String, chats: List[Chat] = List.empty)
+import java.util.UUID
+
+case class User(id: UUID, username: String, chats: List[Chat] = List.empty)

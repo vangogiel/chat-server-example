@@ -2,31 +2,24 @@ package io.vangogiel.chat
 
 import cats.effect.Sync
 import cats.effect.kernel.Async
+import cats.implicits.{ toFlatMapOps, toFunctorOps }
 
-class UserHandler[F[_]: Async](usersStorage: UsersStorage) {
+class UserHandler[F[_]: Async](usersStorage: UsersStorage[F]) {
   def addNewUser(user: User): F[Boolean] = {
-    Sync[F].delay {
-      if (usersStorage.usernameExists(user.username)) {
-        false
-      } else {
-        usersStorage.addUser(User(user.username))
-        true
-      }
+    usersStorage.usernameExists(user.username).flatMap {
+      case true  => Sync[F].delay(false)
+      case false => usersStorage.addUser(user).map(_ => true)
     }
   }
 
   def getUsersList: F[List[User]] = {
-    Sync[F].delay {
-      usersStorage.getListOfUsers
-    }
+    usersStorage.getListOfUsers
   }
 
-  def getUserChats(mainUser: User): F[List[Chat]] = {
-    Sync[F].delay {
-      usersStorage.findUser(mainUser.username) match {
-        case Some(user) => user.chats
-        case None       => List.empty
-      }
+  def getUserChats(user: String): F[List[Chat]] = {
+    usersStorage.findUser(user).map {
+      case Some(user) => user.chats
+      case None       => List.empty
     }
   }
 }
