@@ -1,10 +1,10 @@
 package io.vangogiel.chat
 
-import cats.effect.Sync
 import cats.effect.kernel.Async
 import cats.implicits._
 import fs2.Stream
-import io.grpc.Metadata
+import io.grpc.{ Metadata, Status }
+import io.grpc.Status.{ FAILED_PRECONDITION, INVALID_ARGUMENT }
 import io.vangogiel.chat.chat_service.ChatServiceFs2Grpc
 import io.vangogiel.chat.chats_list_request.ChatsListRequest
 import io.vangogiel.chat.chats_list_response.{
@@ -62,7 +62,7 @@ class ChatServiceImpl[F[_]: Async](
       .getUserChats(request.username)
       .map { listOfChats =>
         ChatsListResponseProto(
-          listOfChats.map(chat => ChatProto(username = chat.user.username))
+          listOfChats.map(chat => ChatProto(username = chat.username))
         )
       }
   }
@@ -70,14 +70,27 @@ class ChatServiceImpl[F[_]: Async](
   override def getOutgoingConversationStream(
       request: fs2.Stream[F, OutgoingConversationStreamRequest],
       ctx: Metadata
-  ): fs2.Stream[F, HandlingResult] =
-    Stream
-      .awakeEvery[F](10.seconds)
-      .evalMap(_ =>
-        Sync[F].delay {
-          HandlingResult(result = Success(value = HandlingResult.Success()))
+  ): Stream[F, HandlingResult] =
+    request
+      .evalMap { req =>
+        req.message match {
+          case Some(content) =>
+            messagesHandler
+              .addMessageAndMaybeUpdateUserList(
+                req.fromUsername,
+                req.toUsername,
+                mapMessageFromProto(req.fromUsername, req.toUsername, content)
+              )
+              .map {
+                case true =>
+                  HandlingResult(Success(HandlingResult.Success()))
+                case false =>
+                  getFailureHandlingResult("user not found", FAILED_PRECONDITION)
+              }
+          case None =>
+            Async[F].delay(getFailureHandlingResult("content is missing", INVALID_ARGUMENT))
         }
-      )
+      }
 
   override def getIncomingConversationStream(
       request: IncomingConversationRequest,
@@ -107,14 +120,22 @@ class ChatServiceImpl[F[_]: Async](
   }
 
   private def hashFunction(message: Message): Long = {
-    MurmurHash3.seqHash(message.from + message.to + message.timestamp).toLong
+    MurmurHash3.seqHash(message.from + message.to + message.timestamp + message.content).toLong
   }
 
   private def mapToIncomingConversationProto(message: Message) = {
     IncomingConversationStreamResponseProto(
       fromUsername = message.from,
       toUsername = message.to,
-      message = Some(MessageProto(message.content, message.timestamp.toString))
+      message = Some(MessageProto(message.timestamp, message.content))
     )
+  }
+
+  private def mapMessageFromProto(from: String, to: String, content: MessageProto): Message = {
+    Message(from, to, content.dateTime, content.content)
+  }
+
+  private def getFailureHandlingResult(message: String, code: Status): HandlingResult = {
+    HandlingResult(Failure(HandlingResult.Failure(message, code.getCode.value().toString)))
   }
 }

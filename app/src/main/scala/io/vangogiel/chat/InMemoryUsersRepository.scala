@@ -18,6 +18,18 @@ class InMemoryUsersRepository[F[_]: Sync](usersStorageRef: Ref[F, List[User]])
 
   override def findUser(username: String): F[Option[User]] =
     usersStorageRef.get.map(listOfUsers => listOfUsers.find(_.username == username))
+
+  override def addUserChat(userA: User, userB: User): F[Unit] = {
+    usersStorageRef.update(listOfUsers => {
+      listOfUsers.map {
+        case user if user.username == userA.username && !user.chats.contains(userB) =>
+          user.copy(chats = user.chats :+ userB)
+        case user if user.username == userB.username && !user.chats.contains(userA) =>
+          user.copy(chats = user.chats :+ userA)
+        case user => user
+      }
+    })
+  }
 }
 
 object InMemoryUsersRepository {

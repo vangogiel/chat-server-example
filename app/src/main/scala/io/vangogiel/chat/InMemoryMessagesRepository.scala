@@ -10,6 +10,15 @@ class InMemoryMessagesRepository[F[_]: Async](messagesRef: Ref[F, Map[ChatId, Ve
       map.get(chatId)
     }
   }
+
+  override def addMessage(chatId: ChatId, message: Message): F[Unit] = {
+    messagesRef.update { map =>
+      map.get(chatId) match {
+        case Some(messages) => map.updated(chatId, messages :+ message)
+        case None           => map.updated(chatId, Vector(message))
+      }
+    }
+  }
 }
 
 object InMemoryMessagesRepository {
