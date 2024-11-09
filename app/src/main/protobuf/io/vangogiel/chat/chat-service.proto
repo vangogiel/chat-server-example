@@ -4,18 +4,18 @@ package io.vangogiel.chat;
 
 import "io/vangogiel/chat/chats-list-request.proto";
 import "io/vangogiel/chat/chats-list-response.proto";
-import "io/vangogiel/chat/incoming-conversation-request.proto";
-import "io/vangogiel/chat/incoming-conversation-stream-response.proto";
-import "io/vangogiel/chat/outgoing-conversation-stream-request.proto";
+import "io/vangogiel/chat/receive-message-request.proto";
+import "io/vangogiel/chat/receive-message-stream-response.proto";
+import "io/vangogiel/chat/send-message-stream-request.proto";
 import "io/vangogiel/chat/handling-result.proto";
 import "io/vangogiel/chat/users-list-request.proto";
 import "io/vangogiel/chat/users-list-response.proto";
 import "io/vangogiel/chat/new-user.proto";
 
 service ChatService {
-  rpc addNewUser(NewUser) returns (HandlingResult);
-  rpc getUsersList(UsersListRequest) returns (UsersListResponse);
-  rpc getChatsList(ChatsListRequest) returns (ChatsListResponse);
-  rpc getOutgoingConversationStream(stream OutgoingConversationStreamRequest) returns (stream HandlingResult);
-  rpc getIncomingConversationStream(IncomingConversationRequest) returns (stream IncomingConversationStreamResponse);
+  rpc createUser(NewUser) returns (HandlingResult);
+  rpc listUsers(UsersListRequest) returns (UsersListResponse);
+  rpc listChats(ChatsListRequest) returns (ChatsListResponse);
+  rpc sendMessageStream(stream SendMessageStreamRequest) returns (stream HandlingResult);
+  rpc receiveMessageStream(ReceiveMessageRequest) returns (stream ReceiveMessageStreamResponse);
 }

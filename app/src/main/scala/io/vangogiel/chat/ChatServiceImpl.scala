@@ -3,8 +3,8 @@ package io.vangogiel.chat
 import cats.effect.kernel.Async
 import cats.implicits._
 import fs2.Stream
-import io.grpc.{ Metadata, Status }
 import io.grpc.Status.{ FAILED_PRECONDITION, INVALID_ARGUMENT }
+import io.grpc.{ Metadata, Status }
 import io.vangogiel.chat.chat_service.ChatServiceFs2Grpc
 import io.vangogiel.chat.chats_list_request.ChatsListRequest
 import io.vangogiel.chat.chats_list_response.{
@@ -12,18 +12,17 @@ import io.vangogiel.chat.chats_list_response.{
   ChatsListResponse => ChatsListResponseProto
 }
 import io.vangogiel.chat.handling_result.HandlingResult
-import io.vangogiel.chat.handling_result.HandlingResult.Result.Success
-import io.vangogiel.chat.handling_result.HandlingResult.Result.Failure
-import io.vangogiel.chat.incoming_conversation_request.IncomingConversationRequest
-import io.vangogiel.chat.incoming_conversation_stream_response.{
-  IncomingConversationStreamResponse => IncomingConversationStreamResponseProto
-}
-import io.vangogiel.chat.new_user.NewUser
-import io.vangogiel.chat.outgoing_conversation_stream_request.OutgoingConversationStreamRequest
+import io.vangogiel.chat.handling_result.HandlingResult.Result.{ Failure, Success }
 import io.vangogiel.chat.message.{ Message => MessageProto }
+import io.vangogiel.chat.new_user.NewUser
+import io.vangogiel.chat.receive_message_request.ReceiveMessageRequest
+import io.vangogiel.chat.receive_message_stream_response.ReceiveMessageStreamResponse
+import io.vangogiel.chat.send_message_stream_request.SendMessageStreamRequest
 import io.vangogiel.chat.users_list_request.UsersListRequest
-import io.vangogiel.chat.users_list_response.{ UsersListResponse => UsersListResponseProto }
-import io.vangogiel.chat.users_list_response.{ User => UserProto }
+import io.vangogiel.chat.users_list_response.{
+  User => UserProto,
+  UsersListResponse => UsersListResponseProto
+}
 
 import java.util.UUID
 import scala.concurrent.duration.DurationInt
@@ -34,7 +33,7 @@ class ChatServiceImpl[F[_]: Async](
     messagesHandler: ChatMessagesHandler[F]
 ) extends ChatServiceFs2Grpc[F, Metadata] {
 
-  override def addNewUser(request: NewUser, ctx: Metadata): F[HandlingResult] = {
+  override def createUser(request: NewUser, ctx: Metadata): F[HandlingResult] = {
     userHandler
       .addNewUser(User(UUID.randomUUID(), request.username))
       .map {
@@ -45,7 +44,7 @@ class ChatServiceImpl[F[_]: Async](
       }
   }
 
-  override def getUsersList(
+  override def listUsers(
       request: UsersListRequest,
       ctx: Metadata
   ): F[UsersListResponseProto] = {
@@ -54,7 +53,7 @@ class ChatServiceImpl[F[_]: Async](
       .map(userProtoList => UsersListResponseProto(userProtoList))
   }
 
-  override def getChatsList(
+  override def listChats(
       request: ChatsListRequest,
       ctx: Metadata
   ): F[ChatsListResponseProto] = {
@@ -67,8 +66,8 @@ class ChatServiceImpl[F[_]: Async](
       }
   }
 
-  override def getOutgoingConversationStream(
-      request: fs2.Stream[F, OutgoingConversationStreamRequest],
+  override def sendMessageStream(
+      request: fs2.Stream[F, SendMessageStreamRequest],
       ctx: Metadata
   ): Stream[F, HandlingResult] =
     request
@@ -92,10 +91,10 @@ class ChatServiceImpl[F[_]: Async](
         }
       }
 
-  override def getIncomingConversationStream(
-      request: IncomingConversationRequest,
+  override def receiveMessageStream(
+      request: ReceiveMessageRequest,
       ctx: Metadata
-  ): fs2.Stream[F, IncomingConversationStreamResponseProto] = {
+  ): fs2.Stream[F, ReceiveMessageStreamResponse] = {
     var currentHash = Option.empty[Long]
     Stream
       .awakeEvery(500.millis)
@@ -114,7 +113,7 @@ class ChatServiceImpl[F[_]: Async](
           }
       }
       .flatMap {
-        case Some(message) => Stream(mapToIncomingConversationProto(message))
+        case Some(message) => Stream(mapToReceiveMessageStreamResponseProto(message))
         case None          => Stream.empty
       }
   }
@@ -123,8 +122,8 @@ class ChatServiceImpl[F[_]: Async](
     MurmurHash3.seqHash(message.from + message.to + message.timestamp + message.content).toLong
   }
 
-  private def mapToIncomingConversationProto(message: Message) = {
-    IncomingConversationStreamResponseProto(
+  private def mapToReceiveMessageStreamResponseProto(message: Message) = {
+    ReceiveMessageStreamResponse(
       fromUsername = message.from,
       toUsername = message.to,
       message = Some(MessageProto(message.timestamp, message.content))

@@ -4,6 +4,6 @@ package io.vangogiel.chat;
 
 import "io/vangogiel/chat/message.proto";
 
-message OutgoingConversationStreamResponse {
+message SendMessageStreamResponse {
   repeated Message messages = 1;
 }
