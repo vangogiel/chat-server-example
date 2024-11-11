@@ -5,7 +5,7 @@ package io.vangogiel.chat;
 import "io/vangogiel/chat/message.proto";
 
 message ReceiveMessageStreamResponse {
-  string from_username = 1;
-  string to_username = 2;
+  string sender_username = 1;
+  string recipient_username = 2;
   Message message = 3;
 }

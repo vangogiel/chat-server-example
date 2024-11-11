@@ -3,6 +3,6 @@ syntax = "proto3";
 package io.vangogiel.chat;
 
 message ReceiveMessageRequest {
-  string from_username = 1;
-  string to_username = 2;
+  string sender_username = 1;
+  string recipient_username = 2;
 }

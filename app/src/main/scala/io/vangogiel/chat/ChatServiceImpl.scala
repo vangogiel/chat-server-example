@@ -76,9 +76,9 @@ class ChatServiceImpl[F[_]: Async](
           case Some(content) =>
             messagesHandler
               .addMessageAndMaybeUpdateUserList(
-                req.fromUsername,
-                req.toUsername,
-                mapMessageFromProto(req.fromUsername, req.toUsername, content)
+                req.senderUsername,
+                req.recipientUsername,
+                mapMessageFromProto(req.senderUsername, req.recipientUsername, content)
               )
               .map {
                 case true =>
@@ -100,7 +100,7 @@ class ChatServiceImpl[F[_]: Async](
       .awakeEvery(500.millis)
       .evalMap { _ =>
         messagesHandler
-          .getMessages(request.fromUsername, request.toUsername)
+          .getMessages(request.senderUsername, request.recipientUsername)
           .map { maybeMessages =>
             maybeMessages.flatMap { messages =>
               messages.lastOption match {
@@ -124,8 +124,8 @@ class ChatServiceImpl[F[_]: Async](
 
   private def mapToReceiveMessageStreamResponseProto(message: Message) = {
     ReceiveMessageStreamResponse(
-      fromUsername = message.from,
-      toUsername = message.to,
+      senderUsername = message.from,
+      recipientUsername = message.to,
       message = Some(MessageProto(message.timestamp, message.content))
     )
   }
