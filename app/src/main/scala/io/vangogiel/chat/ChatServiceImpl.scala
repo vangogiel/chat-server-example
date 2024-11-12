@@ -35,7 +35,7 @@ class ChatServiceImpl[F[_]: Async](
 
   override def createUser(request: NewUser, ctx: Metadata): F[HandlingResult] = {
     userHandler
-      .addNewUser(User(UUID.randomUUID(), request.username))
+      .addNewUser(User(UUID.randomUUID().toString, request.username))
       .map {
         case true =>
           HandlingResult(result = Success(value = HandlingResult.Success()))
@@ -49,7 +49,7 @@ class ChatServiceImpl[F[_]: Async](
       ctx: Metadata
   ): F[UsersListResponseProto] = {
     userHandler.getUsersList
-      .map(users => users.map(user => UserProto(user.username)))
+      .map(users => users.map(user => UserProto(username = user.username, uuid = user.id)))
       .map(userProtoList => UsersListResponseProto(userProtoList))
   }
 
@@ -58,10 +58,10 @@ class ChatServiceImpl[F[_]: Async](
       ctx: Metadata
   ): F[ChatsListResponseProto] = {
     userHandler
-      .getUserChats(request.username)
+      .listUserChats(request.userUuid)
       .map { listOfChats =>
         ChatsListResponseProto(
-          listOfChats.map(chat => ChatProto(username = chat.username))
+          listOfChats.map(chat => ChatProto(userUuid = chat.id))
         )
       }
   }
@@ -76,9 +76,9 @@ class ChatServiceImpl[F[_]: Async](
           case Some(content) =>
             messagesHandler
               .addMessageAndMaybeUpdateUserList(
-                req.senderUsername,
-                req.recipientUsername,
-                mapMessageFromProto(req.senderUsername, req.recipientUsername, content)
+                req.senderUuid,
+                req.recipientUuid,
+                mapMessageFromProto(req.senderUuid, req.recipientUuid, content)
               )
               .map {
                 case true =>
@@ -100,7 +100,7 @@ class ChatServiceImpl[F[_]: Async](
       .awakeEvery(500.millis)
       .evalMap { _ =>
         messagesHandler
-          .getMessages(request.senderUsername, request.recipientUsername)
+          .getMessages(request.senderUuid, request.recipientUuid)
           .map { maybeMessages =>
             maybeMessages.flatMap { messages =>
               messages.lastOption match {
@@ -119,13 +119,15 @@ class ChatServiceImpl[F[_]: Async](
   }
 
   private def hashFunction(message: Message): Long = {
-    MurmurHash3.seqHash(message.from + message.to + message.timestamp + message.content).toLong
+    MurmurHash3
+      .seqHash(message.senderUuid + message.recipientUuid + message.timestamp + message.content)
+      .toLong
   }
 
   private def mapToReceiveMessageStreamResponseProto(message: Message) = {
     ReceiveMessageStreamResponse(
-      senderUsername = message.from,
-      recipientUsername = message.to,
+      senderUuid = message.senderUuid,
+      recipientUuid = message.recipientUuid,
       message = Some(MessageProto(message.timestamp, message.content))
     )
   }

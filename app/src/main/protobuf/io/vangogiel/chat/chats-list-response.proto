@@ -5,7 +5,7 @@ package io.vangogiel.chat;
 import "io/vangogiel/chat/message.proto";
 
 message Chat {
-  string username = 1;
+  string user_uuid = 1;
 }
 
 message ChatsListResponse {

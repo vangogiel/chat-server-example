@@ -16,8 +16,8 @@ class UserHandler[F[_]: Async](usersStorage: UsersStorage[F]) {
     usersStorage.getListOfUsers
   }
 
-  def getUserChats(user: String): F[List[User]] = {
-    usersStorage.findUser(user).map {
+  def listUserChats(userUuid: String): F[List[User]] = {
+    usersStorage.findUser(userUuid).map {
       case Some(user) => user.chats
       case None       => List.empty
     }

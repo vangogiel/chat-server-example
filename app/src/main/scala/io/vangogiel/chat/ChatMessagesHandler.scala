@@ -7,30 +7,31 @@ class ChatMessagesHandler[F[_]: Async](
     usersStorage: UsersStorage[F],
     messagesStorage: MessageStorage[F]
 ) {
-  def getMessages(fromUsername: String, toUsername: String): F[Option[Vector[Message]]] = {
-    usersStorage.findUser(fromUsername).flatMap { fromUser =>
-      usersStorage.findUser(toUsername).flatMap { toUser =>
-        (fromUser, toUser) match {
-          case (Some(from), Some(to)) => messagesStorage.getUsersMessages(ChatId(Seq(from, to)))
-          case _                      => Async[F].delay(None)
+  def getMessages(senderUuid: String, recipientUuid: String): F[Option[Vector[Message]]] = {
+    usersStorage.findUser(senderUuid).flatMap { senderUser =>
+      usersStorage.findUser(recipientUuid).flatMap { recipientUser =>
+        (senderUser, recipientUser) match {
+          case (Some(senderUser), Some(recipientUser)) =>
+            messagesStorage.getUsersMessages(ChatId(Seq(senderUser, recipientUser)))
+          case _ => Async[F].delay(None)
         }
       }
     }
   }
 
   def addMessageAndMaybeUpdateUserList(
-      fromUsername: String,
-      toUsername: String,
+      senderUuid: String,
+      recipientUuid: String,
       message: Message
   ): F[Boolean] = {
-    usersStorage.findUser(fromUsername).flatMap { fromUser =>
-      usersStorage.findUser(toUsername).flatMap { toUser =>
-        (fromUser, toUser) match {
-          case (Some(from), Some(to)) =>
+    usersStorage.findUser(senderUuid).flatMap { senderUser =>
+      usersStorage.findUser(recipientUuid).flatMap { recipientUser =>
+        (senderUser, recipientUser) match {
+          case (Some(senderUser), Some(recipientUser)) =>
             messagesStorage
-              .addMessage(ChatId(Seq(from, to)), message)
+              .addMessage(ChatId(Seq(senderUser, recipientUser)), message)
               .flatMap { _ =>
-                usersStorage.addUserChat(from, to).map(_ => true)
+                usersStorage.addUserChat(senderUser, recipientUser).map(_ => true)
               }
           case _ => Async[F].delay(false)
         }

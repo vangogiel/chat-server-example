@@ -4,6 +4,7 @@ package io.vangogiel.chat;
 
 message User {
   string username = 1;
+  string uuid = 2;
 }
 
 message UsersListResponse {

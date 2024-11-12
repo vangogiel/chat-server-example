@@ -3,5 +3,5 @@ syntax = "proto3";
 package io.vangogiel.chat;
 
 message ChatsListRequest {
-  string username = 1;
+  string user_uuid = 1;
 }
