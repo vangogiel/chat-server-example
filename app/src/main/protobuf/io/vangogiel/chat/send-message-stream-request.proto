@@ -7,5 +7,5 @@ import "io/vangogiel/chat/message.proto";
 message SendMessageStreamRequest {
   string sender_uuid = 1;
   string recipient_uuid = 2;
-  Message message = 3;
+  string content = 3;
 }

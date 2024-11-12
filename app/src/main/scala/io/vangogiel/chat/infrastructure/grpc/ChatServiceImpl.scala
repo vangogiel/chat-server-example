@@ -75,23 +75,18 @@ class ChatServiceImpl[F[_]: Async](
   ): Stream[F, HandlingResult] =
     request
       .evalMap { req =>
-        req.message match {
-          case Some(content) =>
-            messagesHandler
-              .addMessageAndMaybeUpdateUserList(
-                req.senderUuid,
-                req.recipientUuid,
-                mapMessageFromProto(req.senderUuid, req.recipientUuid, content)
-              )
-              .map {
-                case true =>
-                  HandlingResult(Success(HandlingResult.Success()))
-                case false =>
-                  getFailureHandlingResult("user not found", FAILED_PRECONDITION)
-              }
-          case None =>
-            Async[F].delay(getFailureHandlingResult("content is missing", INVALID_ARGUMENT))
-        }
+        messagesHandler
+          .addMessageAndMaybeUpdateUserList(
+            req.senderUuid,
+            req.recipientUuid,
+            mapMessageFromProto(req.senderUuid, req.recipientUuid, req.content)
+          )
+          .map {
+            case true =>
+              HandlingResult(Success(HandlingResult.Success()))
+            case false =>
+              getFailureHandlingResult("user not found", FAILED_PRECONDITION)
+          }
       }
 
   override def receiveMessageStream(
@@ -135,8 +130,12 @@ class ChatServiceImpl[F[_]: Async](
     )
   }
 
-  private def mapMessageFromProto(from: String, to: String, content: MessageProto): Message = {
-    Message(from, to, content.dateTime, content.content)
+  private def mapMessageFromProto(
+      senderUuid: String,
+      recipientUuid: String,
+      content: String
+  ): Message = {
+    Message(senderUuid, recipientUuid, System.currentTimeMillis(), content)
   }
 
   private def getFailureHandlingResult(message: String, code: Status): HandlingResult = {
