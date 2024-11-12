@@ -1,10 +1,11 @@
-package io.vangogiel.chat
+package io.vangogiel.chat.infrastructure.db
 
 import cats.effect.kernel.{ Ref, Sync }
 import cats.implicits.toFunctorOps
+import io.vangogiel.chat.domain.user.{ User, UserStorage }
 
-class InMemoryUsersRepository[F[_]: Sync](usersStorageRef: Ref[F, List[User]])
-    extends UsersStorage[F] {
+class InMemoryUserRepository[F[_]: Sync](usersStorageRef: Ref[F, List[User]])
+    extends UserStorage[F] {
   override def getListOfUsers: F[List[User]] = {
     usersStorageRef.get
   }
@@ -32,10 +33,10 @@ class InMemoryUsersRepository[F[_]: Sync](usersStorageRef: Ref[F, List[User]])
   }
 }
 
-object InMemoryUsersRepository {
-  def apply[F[_]: Sync](): F[InMemoryUsersRepository[F]] = {
+object InMemoryUserRepository {
+  def apply[F[_]: Sync](): F[InMemoryUserRepository[F]] = {
     Ref.of[F, List[User]](List.empty).map { ref =>
-      new InMemoryUsersRepository[F](ref)
+      new InMemoryUserRepository[F](ref)
     }
   }
 }

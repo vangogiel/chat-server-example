@@ -1,4 +1,6 @@
-package io.vangogiel.chat
+package io.vangogiel.chat.domain.message
+
+import io.vangogiel.chat.domain.chat.ChatId
 
 trait MessageStorage[F[_]] {
   def getUsersMessages(chat: ChatId): F[Option[Vector[Message]]]

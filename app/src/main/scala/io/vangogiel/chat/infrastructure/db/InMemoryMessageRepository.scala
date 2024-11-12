@@ -1,7 +1,9 @@
-package io.vangogiel.chat
+package io.vangogiel.chat.infrastructure.db
 
 import cats.effect.kernel.{ Async, Ref }
-import cats.implicits.{ toFlatMapOps, toFunctorOps }
+import cats.implicits.toFunctorOps
+import io.vangogiel.chat.domain.chat.ChatId
+import io.vangogiel.chat.domain.message.{ Message, MessageStorage }
 
 class InMemoryMessagesRepository[F[_]: Async](messagesRef: Ref[F, Map[ChatId, Vector[Message]]])
     extends MessageStorage[F] {

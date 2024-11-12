@@ -1,6 +1,6 @@
-package io.vangogiel.chat
+package io.vangogiel.chat.domain.user
 
-trait UsersStorage[F[_]] {
+trait UserStorage[F[_]] {
   def addUser(user: User): F[Unit]
 
   def findUser(userUuid: String): F[Option[User]]

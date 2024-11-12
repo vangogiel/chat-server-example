@@ -1,10 +1,13 @@
-package io.vangogiel.chat
+package io.vangogiel.chat.application
 
 import cats.effect.kernel.Async
 import cats.implicits.{ toFlatMapOps, toFunctorOps }
+import io.vangogiel.chat.domain.chat.ChatId
+import io.vangogiel.chat.domain.message.{ Message, MessageStorage }
+import io.vangogiel.chat.domain.user.UserStorage
 
-class ChatMessagesHandler[F[_]: Async](
-    usersStorage: UsersStorage[F],
+class MessageHandler[F[_]: Async](
+    usersStorage: UserStorage[F],
     messagesStorage: MessageStorage[F]
 ) {
   def getMessages(senderUuid: String, recipientUuid: String): F[Option[Vector[Message]]] = {

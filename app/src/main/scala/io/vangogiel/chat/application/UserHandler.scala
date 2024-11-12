@@ -1,10 +1,11 @@
-package io.vangogiel.chat
+package io.vangogiel.chat.application
 
 import cats.effect.Sync
 import cats.effect.kernel.Async
 import cats.implicits.{ toFlatMapOps, toFunctorOps }
+import io.vangogiel.chat.domain.user.{ User, UserStorage }
 
-class UserHandler[F[_]: Async](usersStorage: UsersStorage[F]) {
+class UserHandler[F[_]: Async](usersStorage: UserStorage[F]) {
   def addNewUser(user: User): F[Boolean] = {
     usersStorage.usernameExists(user.username).flatMap {
       case true  => Sync[F].delay(false)

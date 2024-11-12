@@ -1,4 +1,4 @@
-package io.vangogiel.chat
+package io.vangogiel.chat.infrastructure.grpc
 
 import cats.effect.kernel.Async
 import cats.implicits._
@@ -11,6 +11,8 @@ import io.vangogiel.chat.chats_list_response.{
   Chat => ChatProto,
   ChatsListResponse => ChatsListResponseProto
 }
+import io.vangogiel.chat.domain.message.Message
+import io.vangogiel.chat.domain.user.User
 import io.vangogiel.chat.handling_result.HandlingResult
 import io.vangogiel.chat.handling_result.HandlingResult.Result.{ Failure, Success }
 import io.vangogiel.chat.message.{ Message => MessageProto }
@@ -23,6 +25,7 @@ import io.vangogiel.chat.users_list_response.{
   User => UserProto,
   UsersListResponse => UsersListResponseProto
 }
+import io.vangogiel.chat.application.{ MessageHandler, UserHandler }
 
 import java.util.UUID
 import scala.concurrent.duration.DurationInt
@@ -30,7 +33,7 @@ import scala.util.hashing.MurmurHash3
 
 class ChatServiceImpl[F[_]: Async](
     userHandler: UserHandler[F],
-    messagesHandler: ChatMessagesHandler[F]
+    messagesHandler: MessageHandler[F]
 ) extends ChatServiceFs2Grpc[F, Metadata] {
 
   override def createUser(request: NewUser, ctx: Metadata): F[HandlingResult] = {

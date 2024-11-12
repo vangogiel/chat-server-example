@@ -4,7 +4,10 @@ import cats.effect.kernel.{ Async, Resource }
 import cats.effect.{ ExitCode, IO, IOApp }
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder
 import io.grpc.protobuf.services.ProtoReflectionService
+import io.vangogiel.chat.application.{ MessageHandler, UserHandler }
 import io.vangogiel.chat.chat_service.ChatServiceFs2Grpc
+import io.vangogiel.chat.infrastructure.db.{ InMemoryMessagesRepository, InMemoryUserRepository }
+import io.vangogiel.chat.infrastructure.grpc.ChatServiceImpl
 
 object Main extends IOApp {
   def run(args: List[String]): IO[ExitCode] = {
@@ -17,8 +20,8 @@ object Main extends IOApp {
   private def createServerAndAddServices[F[_]: Async]() = {
     for {
       messagesRepo <- Resource.eval(InMemoryMessagesRepository[F]())
-      usersRepo <- Resource.eval(InMemoryUsersRepository[F]())
-      messagesHandler = new ChatMessagesHandler[F](usersRepo, messagesRepo)
+      usersRepo <- Resource.eval(InMemoryUserRepository[F]())
+      messagesHandler = new MessageHandler[F](usersRepo, messagesRepo)
       userHandler = new UserHandler[F](usersRepo)
       service <- ChatServiceFs2Grpc.bindServiceResource(
         new ChatServiceImpl[F](userHandler, messagesHandler)
