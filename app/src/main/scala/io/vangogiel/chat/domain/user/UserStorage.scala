@@ -7,7 +7,7 @@ trait UserStorage[F[_]] {
 
   def getListOfUsers: F[List[User]]
 
-  def addUserChat(userA: User, userB: User): F[Unit]
+  def addUserChat(users: User*): F[Unit]
 
   def usernameExists(username: String): F[Boolean]
 }

@@ -5,7 +5,7 @@ import cats.implicits.toFunctorOps
 import io.vangogiel.chat.domain.chat.ChatId
 import io.vangogiel.chat.domain.message.{ Message, MessageStorage }
 
-class InMemoryMessagesRepository[F[_]: Async](messagesRef: Ref[F, Map[ChatId, Vector[Message]]])
+class InMemoryMessageRepository[F[_]: Async](messagesRef: Ref[F, Map[ChatId, Vector[Message]]])
     extends MessageStorage[F] {
   override def getUsersMessages(chatId: ChatId): F[Option[Vector[Message]]] = {
     messagesRef.get.map { map =>
@@ -23,10 +23,10 @@ class InMemoryMessagesRepository[F[_]: Async](messagesRef: Ref[F, Map[ChatId, Ve
   }
 }
 
-object InMemoryMessagesRepository {
-  def apply[F[_]: Async](): F[InMemoryMessagesRepository[F]] = {
+object InMemoryMessageRepository {
+  def apply[F[_]: Async](): F[InMemoryMessageRepository[F]] = {
     Ref.of[F, Map[ChatId, Vector[Message]]](Map.empty).map { ref =>
-      new InMemoryMessagesRepository[F](ref)
+      new InMemoryMessageRepository[F](ref)
     }
   }
 }

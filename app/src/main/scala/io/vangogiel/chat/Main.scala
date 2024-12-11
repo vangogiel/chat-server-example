@@ -6,7 +6,7 @@ import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder
 import io.grpc.protobuf.services.ProtoReflectionService
 import io.vangogiel.chat.application.{ MessageHandler, UserHandler }
 import io.vangogiel.chat.chat_service.ChatServiceFs2Grpc
-import io.vangogiel.chat.infrastructure.db.{ InMemoryMessagesRepository, InMemoryUserRepository }
+import io.vangogiel.chat.infrastructure.db.{ InMemoryUserRepository, InMemoryMessageRepository }
 import io.vangogiel.chat.infrastructure.grpc.ChatServiceImpl
 
 object Main extends IOApp {
@@ -19,7 +19,7 @@ object Main extends IOApp {
 
   private def createServerAndAddServices[F[_]: Async]() = {
     for {
-      messagesRepo <- Resource.eval(InMemoryMessagesRepository[F]())
+      messagesRepo <- Resource.eval(InMemoryMessageRepository[F]())
       usersRepo <- Resource.eval(InMemoryUserRepository[F]())
       messagesHandler = new MessageHandler[F](usersRepo, messagesRepo)
       userHandler = new UserHandler[F](usersRepo)
