@@ -3,7 +3,7 @@ package io.vangogiel.chat.infrastructure.grpc
 import cats.effect.kernel.Async
 import cats.implicits._
 import fs2.Stream
-import io.grpc.Status.{ FAILED_PRECONDITION, INVALID_ARGUMENT }
+import io.grpc.Status.{ FAILED_PRECONDITION }
 import io.grpc.{ Metadata, Status }
 import io.vangogiel.chat.chat_service.ChatServiceFs2Grpc
 import io.vangogiel.chat.chats_list_request.ChatsListRequest
@@ -77,8 +77,8 @@ class ChatServiceImpl[F[_]: Async](
       .evalMap { req =>
         messagesHandler
           .addMessageAndMaybeUpdateUserList(
-            req.senderUuid,
-            req.recipientUuid,
+            senderUuid = req.senderUuid,
+            recipientUuid = req.recipientUuid,
             mapMessageFromProto(req.senderUuid, req.recipientUuid, req.content)
           )
           .map {

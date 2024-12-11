@@ -10,15 +10,11 @@ class MessageHandler[F[_]: Async](
     usersStorage: UserStorage[F],
     messagesStorage: MessageStorage[F]
 ) {
-  def getMessages(senderUuid: String, recipientUuid: String): F[Option[Vector[Message]]] = {
-    usersStorage.findUser(senderUuid).flatMap { senderUser =>
-      usersStorage.findUser(recipientUuid).flatMap { recipientUser =>
-        (senderUser, recipientUser) match {
-          case (Some(senderUser), Some(recipientUser)) =>
-            messagesStorage.getUsersMessages(ChatId(Seq(senderUser, recipientUser)))
-          case _ => Async[F].delay(None)
-        }
-      }
+  def getMessages(senderUuid: String, recipientUuid: String): F[Option[List[Message]]] = {
+    usersStorage.findTwoUsers(senderUuid, recipientUuid).flatMap {
+      case (Some(senderUser), Some(recipientUser)) =>
+        messagesStorage.getUsersMessages(ChatId(Seq(senderUser, recipientUser)))
+      case _ => Async[F].delay(None)
     }
   }
 
@@ -27,18 +23,14 @@ class MessageHandler[F[_]: Async](
       recipientUuid: String,
       message: Message
   ): F[Boolean] = {
-    usersStorage.findUser(senderUuid).flatMap { senderUser =>
-      usersStorage.findUser(recipientUuid).flatMap { recipientUser =>
-        (senderUser, recipientUser) match {
-          case (Some(senderUser), Some(recipientUser)) =>
-            messagesStorage
-              .addMessage(ChatId(Seq(senderUser, recipientUser)), message)
-              .flatMap { _ =>
-                usersStorage.addUserChat(senderUser, recipientUser).map(_ => true)
-              }
-          case _ => Async[F].delay(false)
-        }
-      }
+    usersStorage.findTwoUsers(senderUuid, recipientUuid).flatMap {
+      case (Some(senderUser), Some(recipientUser)) =>
+        messagesStorage
+          .addMessage(ChatId(Seq(senderUser, recipientUser)), message)
+          .flatMap { _ =>
+            usersStorage.addUserChat(senderUser, recipientUser).map(_ => true)
+          }
+      case _ => Async[F].delay(false)
     }
   }
 }

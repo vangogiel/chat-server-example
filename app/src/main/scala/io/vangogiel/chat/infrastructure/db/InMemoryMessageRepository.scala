@@ -7,9 +7,12 @@ import io.vangogiel.chat.domain.message.{ Message, MessageStorage }
 
 class InMemoryMessageRepository[F[_]: Async](messagesRef: Ref[F, Map[ChatId, Vector[Message]]])
     extends MessageStorage[F] {
-  override def getUsersMessages(chatId: ChatId): F[Option[Vector[Message]]] = {
-    messagesRef.get.map { map =>
-      map.get(chatId)
+  override def getUsersMessages(chatId: ChatId): F[Option[List[Message]]] = {
+    messagesRef.modify { current =>
+      current.get(chatId) match {
+        case Some(messages) => (current, Some(messages.toList))
+        case None => (current.updated(chatId, Vector()), None)
+      }
     }
   }
 
