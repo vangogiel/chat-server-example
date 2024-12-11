@@ -21,6 +21,12 @@ class InMemoryUserRepository[F[_]: Sync](usersStorageRef: Ref[F, List[User]])
   override def findUser(userUuid: String): F[Option[User]] =
     usersStorageRef.get.map(listOfUsers => listOfUsers.find(_.id == userUuid))
 
+  override def findTwoUsers(userOneUuid: String, userTwoUuid: String): F[(Option[User], Option[User])] = {
+    usersStorageRef.get.map { listOfUsers =>
+      (listOfUsers.find(_.id == userOneUuid), listOfUsers.find(_.id == userTwoUuid))
+    }
+  }
+
   override def addUserChat(users: User*): F[Unit] = {
     users.toList.traverse_{ user =>
       usersStorageRef.update(listOfUsers => {
