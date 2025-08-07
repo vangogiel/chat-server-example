@@ -1,4 +1,7 @@
 import CiCommands.{ ciBuild, devBuild }
+import Dependencies.Versions
+
+ThisBuild / scalaVersion := Versions.Scala2
 
 lazy val app =
   project
@@ -8,8 +11,16 @@ lazy val app =
         Dependencies.Compile.grpcNettyShaded,
         Dependencies.Compile.catsEffect,
         Dependencies.Compile.fs2Core,
-        "io.grpc" % "grpc-services" % scalapb.compiler.Version.grpcJavaVersion
-      )
+        Dependencies.Compile.fs2Io,
+        Dependencies.Compile.doobieCore,
+        Dependencies.Compile.doobieHikari,
+        Dependencies.Compile.doobiePostgres,
+        Dependencies.Compile.doobieCirce,
+        Dependencies.Compile.doobieFlyway,
+        Dependencies.Compile.postgresql,
+        "io.grpc" % "grpc-services" % scalapb.compiler.Version.grpcJavaVersion,
+        "com.thesamet.scalapb"  %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion % "protobuf"
+      ),
     )
     .enablePlugins(Fs2Grpc)
 

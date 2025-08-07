@@ -3,9 +3,20 @@ syntax = "proto3";
 package io.vangogiel.chat;
 
 import "io/vangogiel/chat/message.proto";
+import "io/vangogiel/chat/handling-result.proto";
 
-message ReceiveMessageStreamResponse {
-  string sender_uuid = 1;
-  string recipient_uuid = 2;
-  Message message = 3;
+message ChatStreamResponse {
+  oneof payload {
+    GetUnreadMessagesResponse get_unread_messages_response = 1;
+    ConfirmDeliveryResponse confirm_delivery_response = 2;
+  }
+}
+
+message GetUnreadMessagesResponse {
+  repeated Message messages = 1;
+}
+
+message ConfirmDeliveryResponse {
+  string message_uuid = 1;
+  HandlingResult handling_result = 2;
 }

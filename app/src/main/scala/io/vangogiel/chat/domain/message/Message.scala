@@ -1,3 +1,6 @@
 package io.vangogiel.chat.domain.message
 
-case class Message(senderUuid: String, recipientUuid: String, timestamp: Long, content: String)
+import java.time.Instant
+import java.util.UUID
+
+case class Message(id: UUID, senderId: UUID, recipientId: UUID, sentAt: Instant, content: String)

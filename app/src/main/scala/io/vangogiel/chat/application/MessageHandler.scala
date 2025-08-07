@@ -1,36 +1,12 @@
 package io.vangogiel.chat.application
 
 import cats.effect.kernel.Async
-import cats.implicits.{ toFlatMapOps, toFunctorOps }
-import io.vangogiel.chat.domain.chat.ChatId
-import io.vangogiel.chat.domain.message.{ Message, MessageStorage }
-import io.vangogiel.chat.domain.user.UserStorage
+import io.vangogiel.chat.domain.message.{ Message, MessageRepository }
 
-class MessageHandler[F[_]: Async](
-    usersStorage: UserStorage[F],
-    messagesStorage: MessageStorage[F]
-) {
-  def getMessages(senderUuid: String, recipientUuid: String): F[Option[List[Message]]] = {
-    usersStorage.findTwoUsers(senderUuid, recipientUuid).flatMap {
-      case (Some(senderUser), Some(recipientUser)) =>
-        messagesStorage.getUsersMessages(ChatId(Seq(senderUser, recipientUser)))
-      case _ => Async[F].delay(None)
-    }
-  }
+import java.util.UUID
 
-  def addMessageAndMaybeUpdateUserList(
-      senderUuid: String,
-      recipientUuid: String,
-      message: Message
-  ): F[Boolean] = {
-    usersStorage.findTwoUsers(senderUuid, recipientUuid).flatMap {
-      case (Some(senderUser), Some(recipientUser)) =>
-        messagesStorage
-          .addMessage(ChatId(Seq(senderUser, recipientUser)), message)
-          .flatMap { _ =>
-            usersStorage.addUserChat(senderUser, recipientUser).map(_ => true)
-          }
-      case _ => Async[F].delay(false)
-    }
+class MessageHandler[F[_]: Async](messagesRepository: MessageRepository[F]) {
+  def getUndeliveredMessages(user1: UUID, user2: UUID): F[List[Message]] = {
+    messagesRepository.getUndeliveredMessages(user1, user2)
   }
 }

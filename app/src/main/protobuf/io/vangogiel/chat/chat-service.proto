@@ -2,20 +2,9 @@ syntax = "proto3";
 
 package io.vangogiel.chat;
 
-import "io/vangogiel/chat/chats-list-request.proto";
-import "io/vangogiel/chat/chats-list-response.proto";
 import "io/vangogiel/chat/receive-message-request.proto";
 import "io/vangogiel/chat/receive-message-stream-response.proto";
-import "io/vangogiel/chat/send-message-stream-request.proto";
-import "io/vangogiel/chat/handling-result.proto";
-import "io/vangogiel/chat/users-list-request.proto";
-import "io/vangogiel/chat/users-list-response.proto";
-import "io/vangogiel/chat/new-user.proto";
 
 service ChatService {
-  rpc createUser(NewUser) returns (HandlingResult);
-  rpc listUsers(UsersListRequest) returns (UsersListResponse);
-  rpc listChats(ChatsListRequest) returns (ChatsListResponse);
-  rpc sendMessageStream(stream SendMessageStreamRequest) returns (stream HandlingResult);
-  rpc receiveMessageStream(ReceiveMessageRequest) returns (stream ReceiveMessageStreamResponse);
+  rpc chatStream(stream ChatStreamRequest) returns (stream ChatStreamResponse);
 }

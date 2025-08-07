@@ -2,7 +2,18 @@ syntax = "proto3";
 
 package io.vangogiel.chat;
 
-message ReceiveMessageRequest {
+message ChatStreamRequest {
+  oneof payload {
+    GetUnreadMessagesRequest get_unread_messages_request = 1;
+    ConfirmDeliveryRequest confirm_delivery_request = 2;
+  }
+}
+
+message GetUnreadMessagesRequest {
   string sender_uuid = 1;
   string recipient_uuid = 2;
+}
+
+message ConfirmDeliveryRequest {
+  string message_uuid = 1;
 }

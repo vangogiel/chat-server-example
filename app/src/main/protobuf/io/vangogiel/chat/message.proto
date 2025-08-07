@@ -1,8 +1,13 @@
 syntax = "proto3";
 
 package io.vangogiel.chat;
+option java_multiple_files = true;
+
+import "google/protobuf/timestamp.proto";
 
 message Message {
-  int64 timestamp = 1;
-  string content = 2;
+  string sender_uuid = 1;
+  string recipient_uuid = 2;
+  google.protobuf.Timestamp sent_at = 3;
+  string content = 4;
 }
