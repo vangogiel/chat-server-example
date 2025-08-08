@@ -7,13 +7,13 @@ import "io/vangogiel/chat/handling-result.proto";
 
 message ChatStreamResponse {
   oneof payload {
-    GetUnreadMessagesResponse get_unread_messages_response = 1;
+    GetUndeliveredMessagesResponse get_undelivered_messages_response = 1;
     ConfirmDeliveryResponse confirm_delivery_response = 2;
     SendMessageResponse send_message_response = 3;
   }
 }
 
-message GetUnreadMessagesResponse {
+message GetUndeliveredMessagesResponse {
   repeated Message messages = 1;
 }
 

@@ -6,13 +6,13 @@ import "google/protobuf/timestamp.proto";
 
 message ChatStreamRequest {
   oneof payload {
-    GetUnreadMessagesRequest get_unread_messages_request = 1;
+    GetUndeliveredMessagesRequest get_undelivered_messages_request = 1;
     ConfirmDeliveryRequest confirm_delivery_request = 2;
     SendMessageRequest send_message_request = 3;
   }
 }
 
-message GetUnreadMessagesRequest {
+message GetUndeliveredMessagesRequest {
   string sender_uuid = 1;
   string recipient_uuid = 2;
 }
