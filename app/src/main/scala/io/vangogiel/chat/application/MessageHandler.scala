@@ -9,4 +9,8 @@ class MessageHandler[F[_]: Async](messagesRepository: MessageRepository[F]) {
   def getUndeliveredMessages(user1: UUID, user2: UUID): F[List[Message]] = {
     messagesRepository.getUndeliveredMessages(user1, user2)
   }
+
+  def markMessageAsDelivered(messageId: UUID): F[Boolean] = {
+    messagesRepository.markMessageAsDelivered(messageId)
+  }
 }

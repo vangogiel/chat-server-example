@@ -1,9 +1,0 @@
-syntax = "proto3";
-
-package io.vangogiel.chat;
-
-import "io/vangogiel/chat/message.proto";
-
-message SendMessageStreamResponse {
-  repeated Message messages = 1;
-}

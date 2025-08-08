@@ -31,8 +31,20 @@ class PostgresqlMessageRepository[F[_]: Async](transactor: Transactor[F])
             ${message.recipientId},
             ${message.sentAt},
             ${message.content}
-          )""".update.run
+          )"""
+      .update.run
       .transact(transactor)
       .void
   }
+
+  override def markMessageAsDelivered(messageId: UUID): F[Boolean] =
+    sql"""update direct_message
+           set delivered = true
+          where id = $messageId"""
+      .update.run
+      .transact(transactor)
+      .map {
+        case 0 => false
+        case _ => true
+      }
 }
