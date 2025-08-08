@@ -9,6 +9,7 @@ message ChatStreamResponse {
   oneof payload {
     GetUnreadMessagesResponse get_unread_messages_response = 1;
     ConfirmDeliveryResponse confirm_delivery_response = 2;
+    SendMessageResponse send_message_response = 3;
   }
 }
 
@@ -17,6 +18,11 @@ message GetUnreadMessagesResponse {
 }
 
 message ConfirmDeliveryResponse {
+  string message_uuid = 1;
+  HandlingResult handling_result = 2;
+}
+
+message SendMessageResponse {
   string message_uuid = 1;
   HandlingResult handling_result = 2;
 }

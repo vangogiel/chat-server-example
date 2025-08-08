@@ -10,25 +10,16 @@ import io.grpc.Metadata
 import io.grpc.Status._
 import io.vangogiel.chat.application.MessageHandler
 import io.vangogiel.chat.chat_message_request.ChatStreamRequest
-import io.vangogiel.chat.chat_message_request.ChatStreamRequest.Payload.{
-  ConfirmDeliveryRequest,
-  GetUnreadMessagesRequest
-}
-import io.vangogiel.chat.chat_message_response.ChatStreamResponse.Payload.{
-  ConfirmDeliveryResponse,
-  GetUnreadMessagesResponse => GetUnreadMessagesResponsePayloadType
-}
-import io.vangogiel.chat.chat_message_response.{
-  ChatStreamResponse,
-  GetUnreadMessagesResponse,
-  ConfirmDeliveryResponse => ConfirmDeliveryResponseProto
-}
+import io.vangogiel.chat.chat_message_request.ChatStreamRequest.Payload.{ConfirmDeliveryRequest, GetUnreadMessagesRequest, SendMessageRequest}
+import io.vangogiel.chat.chat_message_response.ChatStreamResponse.Payload.{ConfirmDeliveryResponse => ConfirmDeliveryResponsePayloadType, GetUnreadMessagesResponse => GetUnreadMessagesResponsePayloadType, SendMessageResponse => SendMessageResponsePayloadType}
+import io.vangogiel.chat.chat_message_response.{ChatStreamResponse, ConfirmDeliveryResponse, GetUnreadMessagesResponse, SendMessageResponse}
 import io.vangogiel.chat.chat_service.ChatServiceFs2Grpc
 import io.vangogiel.chat.domain.message.Message
 import io.vangogiel.chat.handling_result.HandlingResult
-import io.vangogiel.chat.handling_result.HandlingResult.{ Failure, Success }
-import io.vangogiel.chat.message.{ Message => MessageProto }
+import io.vangogiel.chat.handling_result.HandlingResult.{Failure, Success}
+import io.vangogiel.chat.message.{Message => MessageProto}
 
+import java.time.Instant
 import java.util.UUID
 
 class ChatServiceImpl[F[_]: Async: Concurrent](
@@ -62,6 +53,38 @@ class ChatServiceImpl[F[_]: Async: Concurrent](
       .flatMap { topic =>
         val handleIncoming = request.evalMap { req =>
           req.payload match {
+            case SendMessageRequest(value) =>
+              for {
+                senderId <- UUID.fromString(value.senderUuid).pure[F]
+                recipientId <- UUID.fromString(value.recipientUuid).pure[F]
+                message = Message(
+                  id = UUID.randomUUID(),
+                  senderId = senderId,
+                  recipientId = recipientId,
+                  sentAt = value.sentAt.map(a => Instant.ofEpochSecond(a.seconds, a.nanos.toLong)).getOrElse(Instant.now()),
+                  content = value.content
+                )
+                _ <- messagesHandler
+                  .addMessage(message)
+                  .flatMap {
+                    case true => HandlingResult(HandlingResult.Result.Success(Success())).pure[F]
+                    case false =>
+                      HandlingResult(
+                        HandlingResult.Result.Failure(
+                          Failure()
+                            .withCode(NOT_FOUND.getCode.value.toString)
+                            .withMessage("Message not found")
+                        )
+                      ).pure[F]
+                  }.map { result =>
+                    ChatStreamResponse(
+                      SendMessageResponsePayloadType(
+                        SendMessageResponse(message.id.toString, result.some)
+                      )
+                    )
+                  }
+                  .flatMap(topic.publish1)
+              } yield ()
             case GetUnreadMessagesRequest(value) =>
               for {
                 senderId <- UUID.fromString(value.senderUuid).pure[F]
@@ -88,8 +111,8 @@ class ChatServiceImpl[F[_]: Async: Concurrent](
                   }
                   .map { result =>
                     ChatStreamResponse(
-                      ConfirmDeliveryResponse(
-                        ConfirmDeliveryResponseProto(messageId.toString, result.some)
+                      ConfirmDeliveryResponsePayloadType(
+                        ConfirmDeliveryResponse(messageId.toString, result.some)
                       )
                     )
                   }

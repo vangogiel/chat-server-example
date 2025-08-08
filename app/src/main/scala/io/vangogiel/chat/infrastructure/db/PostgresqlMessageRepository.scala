@@ -12,6 +12,23 @@ import java.util.UUID
 class PostgresqlMessageRepository[F[_]: Async](transactor: Transactor[F])
     extends MessageRepository[F] {
 
+  override def addMessage(message: Message): F[Boolean] = {
+    sql"""insert into direct_message (id, sender_id, recipient_id, sent_at, content)
+          values (
+            ${message.id},
+            ${message.senderId},
+            ${message.recipientId},
+            ${message.sentAt},
+            ${message.content}
+          )"""
+      .update.run
+      .transact(transactor)
+      .map {
+        case 0 => false
+        case _ => true
+      }
+  }
+
   override def getUndeliveredMessages(user1: UUID, user2: UUID): F[List[Message]] = {
     sql"""select id, sender_id, recipient_id, sent_at, content
           from direct_message
@@ -22,19 +39,6 @@ class PostgresqlMessageRepository[F[_]: Async](transactor: Transactor[F])
       .query[Message]
       .to[List]
       .transact(transactor)
-  }
-
-  override def addMessage(message: Message): F[Unit] = {
-    sql"""insert into direct_message (sender_id, recipient_id, sent_at, content)
-          values (
-            ${message.senderId},
-            ${message.recipientId},
-            ${message.sentAt},
-            ${message.content}
-          )"""
-      .update.run
-      .transact(transactor)
-      .void
   }
 
   override def markMessageAsDelivered(messageId: UUID): F[Boolean] =
