@@ -5,6 +5,7 @@ package io.vangogiel.chat;
 import "google/protobuf/timestamp.proto";
 
 message ChatStreamRequest {
+  string correlation_id = 99;
   oneof payload {
     GetUndeliveredMessagesRequest get_undelivered_messages_request = 1;
     ConfirmDeliveryRequest confirm_delivery_request = 2;

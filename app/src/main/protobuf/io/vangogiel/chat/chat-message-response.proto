@@ -6,10 +6,12 @@ import "io/vangogiel/chat/message.proto";
 import "io/vangogiel/chat/handling-result.proto";
 
 message ChatStreamResponse {
+  string correlation_id = 99;
   oneof payload {
     GetUndeliveredMessagesResponse get_undelivered_messages_response = 1;
     ConfirmDeliveryResponse confirm_delivery_response = 2;
     SendMessageResponse send_message_response = 3;
+    ErrorResponse error_response = 4;
   }
 }
 
@@ -25,4 +27,9 @@ message ConfirmDeliveryResponse {
 message SendMessageResponse {
   string message_uuid = 1;
   HandlingResult handling_result = 2;
+}
+
+message ErrorResponse {
+  string message = 1;
+  string code = 2;
 }

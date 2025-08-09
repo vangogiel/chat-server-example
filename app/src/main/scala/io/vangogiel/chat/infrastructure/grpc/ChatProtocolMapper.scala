@@ -2,8 +2,10 @@ package io.vangogiel.chat.infrastructure.grpc
 
 import cats.implicits.catsSyntaxOptionId
 import com.google.protobuf.timestamp.Timestamp
-import io.vangogiel.chat.chat_message_response.ChatStreamResponse.Payload.{ConfirmDeliveryResponse => ConfirmDeliveryResponsePayloadType, GetUndeliveredMessagesResponse => GetUndeliveredMessagesResponsePayloadType, SendMessageResponse => SendMessageResponsePayloadType}
-import io.vangogiel.chat.chat_message_response.{ChatStreamResponse, ConfirmDeliveryResponse, GetUndeliveredMessagesResponse, SendMessageResponse}
+import io.grpc.Status
+import io.grpc.Status.INTERNAL
+import io.vangogiel.chat.chat_message_response.ChatStreamResponse.Payload.{ConfirmDeliveryResponse => ConfirmDeliveryResponsePayloadType, ErrorResponse => ErrorResponseType, GetUndeliveredMessagesResponse => GetUndeliveredMessagesResponsePayloadType, SendMessageResponse => SendMessageResponsePayloadType}
+import io.vangogiel.chat.chat_message_response.{ChatStreamResponse, ConfirmDeliveryResponse, GetUndeliveredMessagesResponse, SendMessageResponse, ErrorResponse => ErrorResponseProto}
 import io.vangogiel.chat.chat_message_request.{ConfirmDeliveryRequest => ConfirmDeliveryRequestProto, GetUndeliveredMessagesRequest => GetUnreadMessagesRequestProto, SendMessageRequest => SendMessageRequestProto}
 import io.vangogiel.chat.domain.message.Message
 import io.vangogiel.chat.handling_result.HandlingResult
@@ -13,8 +15,9 @@ import java.time.Instant
 import java.util.UUID
 
 object ChatProtocolMapper {
-  def mapToReceiveMessageStreamResponseProto(messages: List[Message]): ChatStreamResponse = {
+  def mapToReceiveMessageStreamResponseProto(correlationId: String, messages: List[Message]): ChatStreamResponse = {
     ChatStreamResponse(
+      correlationId = correlationId,
       GetUndeliveredMessagesResponsePayloadType(
         GetUndeliveredMessagesResponse(
           messages = messages.map { message =>
@@ -31,7 +34,7 @@ object ChatProtocolMapper {
     )
   }
 
-  def mapMessageFromProto(value: SendMessageRequestProto): Message = {
+  def mapMessageFromProto(senderId: UUID, recipientId: UUID, value: SendMessageRequestProto): Message = {
     Message(
       id = UUID.randomUUID(),
       senderId = UUID.fromString(value.senderUuid),
@@ -43,18 +46,32 @@ object ChatProtocolMapper {
     )
   }
 
-  def mapToSendMessageResponse(messageId: UUID, result: HandlingResult): ChatStreamResponse = {
+  def mapToSendMessageResponse(correlationId: String, messageId: UUID, result: HandlingResult): ChatStreamResponse = {
     ChatStreamResponse(
+      correlationId = correlationId,
       SendMessageResponsePayloadType(
         SendMessageResponse(messageId.toString, result.some)
       )
     )
   }
 
-  def mapToConfirmDeliveryResponse(messageId: UUID, result: HandlingResult): ChatStreamResponse = {
+  def mapToConfirmDeliveryResponse(correlationId: String, messageId: UUID, result: HandlingResult): ChatStreamResponse = {
     ChatStreamResponse(
+      correlationId = correlationId,
       ConfirmDeliveryResponsePayloadType(
         ConfirmDeliveryResponse(messageId.toString, result.some)
+      )
+    )
+  }
+
+  def mapToErrorResponse(correlationId: String, status: Status, message: String): ChatStreamResponse = {
+    ChatStreamResponse(
+      correlationId = correlationId,
+      payload = ErrorResponseType(
+        ErrorResponseProto(
+          code = status.getCode.value.toString,
+          message = message
+        )
       )
     )
   }
