@@ -1,7 +1,7 @@
 package io.vangogiel.chat.infrastructure.grpc
 
 import cats.MonadThrow
-import cats.effect.kernel.Async
+import cats.effect.kernel.{ Async, Sync }
 import cats.implicits._
 import fs2.Stream
 import fs2.concurrent.Topic
@@ -21,6 +21,7 @@ import io.vangogiel.chat.chat_message_request.{
 }
 import io.vangogiel.chat.chat_message_response.ChatStreamResponse
 import io.vangogiel.chat.chat_service.ChatServiceFs2Grpc
+import io.vangogiel.chat.domain.message.ConversationId
 import io.vangogiel.chat.handling_result.HandlingResult
 import io.vangogiel.chat.handling_result.HandlingResult.{ Failure, Success }
 import io.vangogiel.chat.infrastructure.grpc.ChatProtocolMapper.{
@@ -33,7 +34,7 @@ import io.vangogiel.chat.infrastructure.grpc.ChatProtocolMapper.{
 
 import java.util.UUID
 
-class ChatServiceImpl[F[_]: Async: MonadThrow](
+class ChatServiceImpl[F[_]: Async](
     messagesHandler: MessageHandler[F]
 ) extends ChatServiceFs2Grpc[F, Metadata] {
 
@@ -41,14 +42,13 @@ class ChatServiceImpl[F[_]: Async: MonadThrow](
       request: Stream[F, ChatStreamRequest],
       ctx: Metadata
   ): Stream[F, ChatStreamResponse] = {
-    Stream.eval(Topic[F, ChatStreamResponse]).flatMap { topic =>
-      val incoming = request.flatMap { body =>
-        Stream.eval(body.correlationId.pure[F]).flatMap { correlationId =>
-          handleRequests(body.payload, topic)(correlationId)
-        }
+    for {
+      topic <- Stream.eval(Topic[F, ChatStreamResponse])
+      incoming = request.flatMap { body =>
+        handleRequests(body.payload, topic)(body.correlationId)
       }
-      topic.subscribe(1000).concurrently(incoming)
-    }
+      out <- topic.subscribe(1000).concurrently(incoming)
+    } yield out
   }
 
   private def handleRequests(
@@ -75,13 +75,24 @@ class ChatServiceImpl[F[_]: Async: MonadThrow](
       value: SendMessageRequestProto
   )(correlationId: String): F[Unit] = {
     for {
-      senderId <- parseUuid(value.senderUuid)
-      recipientId <- parseUuid(value.recipientUuid)
-      message <- mapMessageFromProto(senderId, recipientId, value).pure[F]
+      senderUuid <- parseUuid(value.senderUuid)
+      recipientUuid <- parseUuid(value.recipientUuid)
+      conversationId <- Sync[F].delay(ConversationId.of(senderUuid, recipientUuid))
+      message <- mapMessageFromProto(value).pure[F]
       _ <- messagesHandler
-        .addMessage(message)
+        .addMessage(conversationId, message)
         .map(maybeMessageFailedToSendHandlingResult)
-        .map(result => mapToSendMessageResponse(correlationId, message.id, result))
+        .map(
+          result =>
+            mapToSendMessageResponse(
+              correlationId,
+              conversationId,
+              message.id,
+              senderUuid,
+              recipientUuid,
+              result
+          )
+        )
         .flatMap(topic.publish1)
     } yield ()
   }
@@ -93,8 +104,8 @@ class ChatServiceImpl[F[_]: Async: MonadThrow](
     for {
       senderId <- parseUuid(value.senderUuid)
       recipientId <- parseUuid(value.recipientUuid)
-      messages <- messagesHandler.getUndeliveredMessages(senderId, recipientId)
-      _ <- topic.publish1(mapToReceiveMessageStreamResponseProto(correlationId, messages))
+      conversation <- messagesHandler.getUndeliveredMessages(ConversationId.of(senderId, recipientId))
+      _ <- topic.publish1(mapToReceiveMessageStreamResponseProto(correlationId, conversation))
     } yield ()
   }
 
@@ -103,11 +114,10 @@ class ChatServiceImpl[F[_]: Async: MonadThrow](
       value: ConfirmDeliveryRequestProto
   )(correlationId: String): F[Unit] = {
     for {
-      messageId <- parseUuid(value.messageUuid)
       _ <- messagesHandler
-        .markMessageAsDelivered(messageId)
+        .markMessageAsDelivered(value.messageId)
         .map(maybeMessageNotFoundHandlingResult)
-        .map(result => mapToConfirmDeliveryResponse(correlationId, messageId, result))
+        .map(result => mapToConfirmDeliveryResponse(correlationId, value.messageId, result))
         .flatMap(topic.publish1)
     } yield ()
   }

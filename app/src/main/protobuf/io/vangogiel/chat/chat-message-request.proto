@@ -13,18 +13,18 @@ message ChatStreamRequest {
   }
 }
 
+message SendMessageRequest {
+  string sender_uuid = 1;
+  string recipient_uuid = 2;
+  string content = 3;
+  google.protobuf.Timestamp sent_at = 4;
+}
+
 message GetUndeliveredMessagesRequest {
   string sender_uuid = 1;
   string recipient_uuid = 2;
 }
 
 message ConfirmDeliveryRequest {
-  string message_uuid = 1;
-}
-
-message SendMessageRequest {
-  string sender_uuid = 1;
-  string recipient_uuid = 2;
-  string content = 3;
-  google.protobuf.Timestamp sent_at = 4;
+  string message_id = 1;
 }

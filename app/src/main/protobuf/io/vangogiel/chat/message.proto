@@ -6,7 +6,7 @@ option java_multiple_files = true;
 import "google/protobuf/timestamp.proto";
 
 message Message {
-  string message_uuid = 1;
+  string message_id = 1;
   string sender_uuid = 2;
   string recipient_uuid = 3;
   google.protobuf.Timestamp sent_at = 4;

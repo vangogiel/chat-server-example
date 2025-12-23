@@ -1,20 +1,17 @@
 package io.vangogiel.chat.application
 
-import cats.effect.kernel.Async
-import io.vangogiel.chat.domain.message.{ Message, MessageRepository }
+import io.vangogiel.chat.domain.message.{Conversation, ConversationId, Message, MessageRepository}
 
-import java.util.UUID
-
-class MessageHandler[F[_]: Async](messagesRepository: MessageRepository[F]) {
-  def addMessage(message: Message): F[Boolean] = {
-    messagesRepository.addMessage(message)
+class MessageHandler[F[_]](messagesRepository: MessageRepository[F]) {
+  def addMessage(conversationId: ConversationId, message: Message): F[Boolean] = {
+    messagesRepository.addMessage(conversationId, message)
   }
 
-  def getUndeliveredMessages(user1: UUID, user2: UUID): F[List[Message]] = {
-    messagesRepository.getUndeliveredMessages(user1, user2)
+  def getUndeliveredMessages(conversationId: ConversationId): F[Conversation] = {
+    messagesRepository.getUndeliveredMessages(conversationId)
   }
 
-  def markMessageAsDelivered(messageId: UUID): F[Boolean] = {
+  def markMessageAsDelivered(messageId: String): F[Boolean] = {
     messagesRepository.markMessageAsDelivered(messageId)
   }
 }

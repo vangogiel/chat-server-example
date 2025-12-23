@@ -4,7 +4,7 @@ import cats.effect.{Async, Resource}
 import com.zaxxer.hikari.HikariConfig
 import doobie.hikari.HikariTransactor
 
-import scala.concurrent.duration.MINUTES
+import scala.concurrent.duration.{MILLISECONDS, MINUTES}
 
 object DbConnectionFactory {
   def createTransactor[F[_]: Async](dbConfig: DbConfig): Resource[F, HikariTransactor[F]] =
@@ -16,7 +16,7 @@ object DbConnectionFactory {
         config.setUsername(dbConfig.user)
         config.setPassword(dbConfig.password)
         config.setMaximumPoolSize(dbConfig.connectionPoolSize)
-        config.setConnectionTimeout(MINUTES.toMillis(1L))
+        config.setConnectionTimeout(MILLISECONDS.toMillis(10000L))
         config.setMaxLifetime(MINUTES.toMillis(10))
         config
       }

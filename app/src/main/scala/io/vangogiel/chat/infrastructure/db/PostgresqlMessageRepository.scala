@@ -2,19 +2,23 @@ package io.vangogiel.chat.infrastructure.db
 
 import cats.effect.Async
 import cats.implicits._
-import doobie.Transactor
+import doobie.{Fragment, Transactor}
 import doobie.implicits._
 import doobie.postgres.implicits._
-import io.vangogiel.chat.domain.message.{ Message, MessageRepository }
+import doobie.util.Read
+import io.vangogiel.chat.domain.message.{Conversation, ConversationId, Message, MessageRepository}
+import io.vangogiel.chat.infrastructure.db.PostgresqlMessageRepository.messageTable
 
+import java.time.Instant
 import java.util.UUID
 
 class PostgresqlMessageRepository[F[_]: Async](transactor: Transactor[F])
     extends MessageRepository[F] {
 
-  override def addMessage(message: Message): F[Boolean] = {
-    sql"""insert into direct_message (id, sender_id, recipient_id, sent_at, content)
+  override def addMessage(conversationId: ConversationId, message: Message): F[Boolean] = {
+    sql"""insert into $messageTable (conversation_id, message_id, sender_id, recipient_id, sent_at, content)
           values (
+            ${conversationId.value},
             ${message.id},
             ${message.senderId},
             ${message.recipientId},
@@ -29,26 +33,31 @@ class PostgresqlMessageRepository[F[_]: Async](transactor: Transactor[F])
       }
   }
 
-  override def getUndeliveredMessages(user1: UUID, user2: UUID): F[List[Message]] = {
-    sql"""select id, sender_id, recipient_id, sent_at, content
-          from direct_message
-          where ((sender_id = $user1 and recipient_id = $user2)
-             or (sender_id = $user2 and recipient_id = $user1))
+  override def getUndeliveredMessages(conversationId: ConversationId): F[Conversation] = {
+    sql"""select message_id, sender_id, recipient_id, sent_at, content
+          from $messageTable
+          where conversation_id = ${conversationId.value}
             and delivered = false
           order by sent_at desc"""
       .query[Message]
       .to[List]
       .transact(transactor)
+      .map(messages => Conversation(conversationId, messages))
   }
 
-  override def markMessageAsDelivered(messageId: UUID): F[Boolean] =
-    sql"""update direct_message
+  override def markMessageAsDelivered(messageId: String): F[Boolean] =
+    sql"""update $messageTable
            set delivered = true
-          where id = $messageId"""
+          where message_id = $messageId"""
       .update.run
       .transact(transactor)
       .map {
         case 0 => false
         case _ => true
       }
+}
+
+
+object PostgresqlMessageRepository {
+  val messageTable: Fragment = fr"message"
 }

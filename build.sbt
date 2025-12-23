@@ -18,6 +18,7 @@ lazy val app =
         Dependencies.Compile.doobieCirce,
         Dependencies.Compile.doobieFlyway,
         Dependencies.Compile.postgresql,
+        Dependencies.Compile.airframe,
         "io.grpc" % "grpc-services" % scalapb.compiler.Version.grpcJavaVersion,
         "com.thesamet.scalapb"  %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion % "protobuf"
       ),

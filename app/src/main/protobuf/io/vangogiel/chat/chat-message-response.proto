@@ -15,16 +15,20 @@ message ChatStreamResponse {
   }
 }
 
+message SendMessageResponse {
+  int64 conversation_id = 1;
+  string message_id = 2;
+  string sender_uuid = 3;
+  string recipient_uuid = 4;
+  HandlingResult handling_result = 5;
+}
+
 message GetUndeliveredMessagesResponse {
-  repeated Message messages = 1;
+  int64 conversation_id = 1;
+  repeated Message messages = 2;
 }
 
 message ConfirmDeliveryResponse {
-  string message_uuid = 1;
-  HandlingResult handling_result = 2;
-}
-
-message SendMessageResponse {
   string message_uuid = 1;
   HandlingResult handling_result = 2;
 }
