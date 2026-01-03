@@ -1,4 +1,4 @@
-package io.vangogiel.chat.domain.message
+package io.vangogiel.chat.domain.conversation
 
 import java.util.UUID
 import scala.util.hashing.MurmurHash3

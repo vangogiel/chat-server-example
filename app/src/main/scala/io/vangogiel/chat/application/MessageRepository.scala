@@ -1,4 +1,7 @@
-package io.vangogiel.chat.domain.message
+package io.vangogiel.chat.application
+
+import io.vangogiel.chat.domain.conversation.{ Conversation, ConversationId }
+import io.vangogiel.chat.domain.message.Message
 
 trait MessageRepository[F[_]] {
   def addMessage(conversationId: ConversationId, message: Message): F[Boolean]

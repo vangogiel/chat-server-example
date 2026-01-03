@@ -4,10 +4,10 @@ import cats.effect.kernel.{Async, Resource}
 import cats.effect.{ExitCode, IO, IOApp}
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder
 import io.grpc.protobuf.services.ProtoReflectionService
-import io.vangogiel.chat.application.MessageHandler
+import io.vangogiel.chat.application.MessageStreamHandlerService
 import io.vangogiel.chat.chat_service.ChatServiceFs2Grpc
 import io.vangogiel.chat.infrastructure.db.{DbConfig, DbConnectionFactory, DbMigration, PostgresqlMessageRepository}
-import io.vangogiel.chat.infrastructure.grpc.ChatServiceImpl
+import io.vangogiel.chat.infrastructure.grpc.ChatGrpcAdapter
 
 object Main extends IOApp with DbMigration {
   def run(args: List[String]): IO[ExitCode] = {
@@ -22,9 +22,9 @@ object Main extends IOApp with DbMigration {
       _ <- Resource.eval(migrate("jdbc:postgresql://localhost:5432/communicationDb?currentSchema=communication", "admin", "myPassword"))
       transactor <- DbConnectionFactory.createTransactor(DbConfig("admin", "myPassword", "jdbc:postgresql://localhost:5432/communicationDb?currentSchema=communication", 2))
       messagesRepo = new PostgresqlMessageRepository[F](transactor)
-      messagesHandler = new MessageHandler[F](messagesRepo)
+      messagesHandler = new MessageStreamHandlerService[F](messagesRepo)
       service <- ChatServiceFs2Grpc.bindServiceResource(
-        new ChatServiceImpl[F](messagesHandler)
+        new ChatGrpcAdapter[F](messagesHandler)
       )
       serverBuilder = NettyServerBuilder
         .forPort(9999)

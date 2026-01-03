@@ -5,12 +5,10 @@ import cats.implicits._
 import doobie.{Fragment, Transactor}
 import doobie.implicits._
 import doobie.postgres.implicits._
-import doobie.util.Read
-import io.vangogiel.chat.domain.message.{Conversation, ConversationId, Message, MessageRepository}
+import io.vangogiel.chat.application.MessageRepository
+import io.vangogiel.chat.domain.conversation.{Conversation, ConversationId}
+import io.vangogiel.chat.domain.message.Message
 import io.vangogiel.chat.infrastructure.db.PostgresqlMessageRepository.messageTable
-
-import java.time.Instant
-import java.util.UUID
 
 class PostgresqlMessageRepository[F[_]: Async](transactor: Transactor[F])
     extends MessageRepository[F] {
